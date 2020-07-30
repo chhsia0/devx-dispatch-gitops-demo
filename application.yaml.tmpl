@@ -55,3 +55,37 @@ spec:
           serviceName: hello-world
           servicePort: 80
         path: /hello-world
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: trigger-jenkins-pipeline
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  template:
+    spec:
+      containers:
+      - name: curl
+        image: curlimages/curl
+        args:
+        - -s
+        - -u
+        - $(USERNAME):$(PASSWORD)
+        - -X
+        - POST
+        - -I
+        - https://jenkins.mesosphere.com/service/jenkins/job/dispatch-remote-test-pipeline/build
+        env:
+        - name: USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: jenkins-secret
+              key: username
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: jenkins-secret
+              key: username
+      restartPolicy: Never
